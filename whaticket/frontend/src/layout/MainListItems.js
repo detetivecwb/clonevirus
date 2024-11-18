@@ -849,7 +849,7 @@ const MainListItems = ({ collapsed, drawerClose }) => {
               fontWeight: "bold",
             }}
           >
-            {`V.2.3.0`}
+            {`By SKC Sistemas`}
           </Typography>
         </React.Fragment>
       )}

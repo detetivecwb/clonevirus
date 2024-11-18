@@ -42,7 +42,7 @@ const Copyright = () => {
 		<Typography variant="body2" color="primary" align="center">
 			{"Copyright "}
  			<Link color="primary" href="#">
- 				Core Sistemas
+ 				Agilizachat
  			</Link>{" "}
  			{new Date().getFullYear()}
  			{"."}
