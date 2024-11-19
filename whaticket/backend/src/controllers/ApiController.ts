@@ -56,15 +56,10 @@ interface ContactData {
   isGroup: boolean;
 }
 
-const createContact = async (
-  whatsappId: number | undefined,
-  companyId: number | undefined,
-  newContact: string,
-  userId?: number | 0,
-  queueId?: number | 0,
-  wbot?: any
-) => {
+const createContact = async (whatsappId: number | undefined, companyId: number | undefined, newContact: string, userId?: number | 0, wbot?: any) => {
   try {
+
+
     // await CheckIsValidContact(newContact, companyId);
     const validNumber: any = await CheckContactNumber(newContact, companyId, newContact.length > 17);
 
@@ -80,6 +75,7 @@ const createContact = async (
     };
 
     const contact = await CreateOrUpdateContactService(contactData);
+
 
     const settings = await CompaniesSettings.findOne({
       where: { companyId }
@@ -106,7 +102,7 @@ const createContact = async (
         whatsapp,
         0,
         companyId,
-        queueId,
+        null,
         userId,
         null,
         whatsapp.channel,
@@ -250,6 +246,8 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const whatsapp = await Whatsapp.findOne({ where: { token } });
   const companyId = whatsapp.companyId;
 
+
+
   newContact.number = newContact.number.replace(" ", "");
 
   const schema = Yup.object().shape({
@@ -266,15 +264,18 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 
   const wbot = await getWbot(whatsapp.id);
 
+
   let user
   if (userId?.toString() !== "" && !isNaN(userId)) {
     user = await ShowUserService(userId, companyId);
   }
 
+
   let queue
   if (queueId?.toString() !== "" && !isNaN(queueId)) {
     queue = await ShowQueueService(queueId, companyId);
   }
+
 
   let bodyMessage;
 
@@ -285,7 +286,9 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     bodyMessage = body.trim();
   }
 
+
   if (noRegister) {
+
     if (medias) {
       try {
         // console.log(medias)
@@ -318,7 +321,8 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
         })
     }
   } else {
-    const contactAndTicket = await createContact(whatsapp.id, companyId, newContact.number, userId, queueId, wbot);
+
+    const contactAndTicket = await createContact(whatsapp.id, companyId, newContact.number, userId, wbot);
 
     let sentMessage
 

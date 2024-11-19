@@ -52,6 +52,8 @@ const downloadProfileImage = async ({
       responseType: 'arraybuffer'
     });
 
+    console.log(contact)
+
     filename = `${new Date().getTime()}.jpeg`;
     fs.writeFileSync(join(folder, filename), response.data);
 
@@ -88,8 +90,6 @@ const CreateOrUpdateContactService = async ({
 
     let updateImage = (!contact || contact?.profilePicUrl !== profilePicUrl && profilePicUrl !== "") && wbot || false;
 
-    console.log(93, "CreateUpdateContactService", { updateImage })
-
     if (contact) {
       contact.remoteJid = remoteJid;
       contact.profilePicUrl = profilePicUrl || null;
@@ -99,7 +99,6 @@ const CreateOrUpdateContactService = async ({
           where: { id: whatsappId, companyId }
         });
 
-        console.log(104, "CreateUpdateContactService")
 
         if (whatsapp) {
           contact.whatsappId = whatsappId;
@@ -109,7 +108,6 @@ const CreateOrUpdateContactService = async ({
 
       let fileName, oldPath = "";
       if (contact.urlPicture) {
-        console.log(114, "CreateUpdateContactService")
 
         oldPath = path.resolve(contact.urlPicture.replace(/\\/g, '/'));
         fileName = path.join(folder, oldPath.split('\\').pop());
@@ -117,7 +115,6 @@ const CreateOrUpdateContactService = async ({
       if (!fs.existsSync(fileName) || contact.profilePicUrl === "") {
         if (wbot && ['whatsapp'].includes(channel)) {
           try {
-            console.log(120, "CreateUpdateContactService")
             profilePicUrl = await wbot.profilePictureUrl(remoteJid, "image");
           } catch (e) {
             Sentry.captureException(e);
@@ -227,13 +224,13 @@ const CreateOrUpdateContactService = async ({
           contact
         });
     } else {
-      
+
       io.of(String(companyId))
         .emit(`company-${companyId}-contact`, {
           action: "update",
           contact
         });
-        
+
     }
 
     return contact;

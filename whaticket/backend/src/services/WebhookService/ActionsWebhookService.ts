@@ -16,7 +16,7 @@ import fs from "fs";
 import GetWhatsappWbot from "../../helpers/GetWhatsappWbot";
 import path from "path";
 import SendWhatsAppMedia from "../WbotServices/SendWhatsAppMedia";
-import SendWhatsAppMediaFlow, { typeSimulation } from "../WbotServices/SendWhatsAppMediaFlow";
+import SendWhatsAppMediaFlow from "../WbotServices/SendWhatsAppMediaFlow";
 import { randomizarCaminho } from "../../utils/randomizador";
 import { SendMessageFlow } from "../../helpers/SendMessageFlow";
 import formatBody from "../../helpers/Mustache";
@@ -36,7 +36,6 @@ import logger from "../../utils/logger";
 import CreateLogTicketService from "../TicketServices/CreateLogTicketService";
 import CompaniesSettings from "../../models/CompaniesSettings";
 import ShowWhatsAppService from "../WhatsappService/ShowWhatsAppService";
-import { delay } from "bluebird";
 
 interface IAddContact {
   companyId: number;
@@ -172,13 +171,9 @@ export const ActionsWebhookService = async (
         });
 
         if (ticketInit.status === "closed") {
-          break;
-        } else {
-          await ticketInit.update({
-            dataWebhook: {
-              status: "process",
-            },
-          });
+          if (numberPhrase === "") {
+            break;
+          }
         }
 
       }
@@ -276,7 +271,7 @@ export const ActionsWebhookService = async (
           userId: ticket.userId
         })
 
-
+       
 
         await UpdateTicketService({
           ticketData: {
@@ -302,7 +297,7 @@ export const ActionsWebhookService = async (
 
         const { queues, greetingMessage, maxUseBotQueues, timeUseBotQueues } = await ShowWhatsAppService(whatsappId, companyId);
 
-        if (greetingMessage.length > 1) {
+        if(greetingMessage.length > 1 ){
           const body = formatBody(`${greetingMessage}`, ticket);
 
           const ticketDetails = await ShowTicketService(ticket.id, companyId);
@@ -326,49 +321,8 @@ export const ActionsWebhookService = async (
 
       if (nodeSelected.type === "singleBlock") {
         for (var iLoc = 0; iLoc < nodeSelected.data.seq.length; iLoc++) {
-
+        
           const elementNowSelected = nodeSelected.data.seq[iLoc];
-
-          let ticketUpdate = await Ticket.findOne({
-            where: { id: idTicket, companyId }
-          });
-
-          if (ticketUpdate.status === "open") {
-
-            pressKey = "999";
-            execFn = undefined;
-
-
-            await ticket.update({
-              lastFlowId: null,
-              dataWebhook: null,
-              queueId: null,
-              hashFlowId: null,
-              flowWebhook: false,
-              flowStopped: null
-            });
-            break;
-          }
-
-          if (ticketUpdate.status === "closed") {
-
-            pressKey = "999";
-            execFn = undefined;
-
-            await ticket.reload();
-
-            io.of(String(companyId))
-              // .to(oldStatus)
-              // .to(ticketId.toString())
-              .emit(`company-${ticket.companyId}-ticket`, {
-                action: "delete",
-                ticketId: ticket.id
-              });
-
-            break;
-          }
-
-
           if (elementNowSelected.includes("message")) {
             // await SendMessageFlow(whatsapp, {
             //   number: numberClient,
@@ -395,9 +349,6 @@ export const ActionsWebhookService = async (
               msg = replaceMessages(bodyFor, details, dataWebhook, dataLocal);
             }
 
-            await delay(3000);
-            await typeSimulation(ticket, 'composing')
-
             await SendWhatsAppMessage({
               body: msg,
               ticket: ticketDetails,
@@ -409,8 +360,6 @@ export const ActionsWebhookService = async (
             await ticketDetails.update({
               lastMessage: formatBody(bodyFor, ticket.contact)
             });
-
-
             await intervalWhats("1");
           }
           if (elementNowSelected.includes("interval")) {
@@ -420,12 +369,7 @@ export const ActionsWebhookService = async (
               )[0].value
             );
           }
-
-
           if (elementNowSelected.includes("img")) {
-
-            await typeSimulation(ticket, 'composing')
-
             await SendMessage(whatsapp, {
               number: numberClient,
               body: "",
@@ -442,8 +386,6 @@ export const ActionsWebhookService = async (
             });
             await intervalWhats("1");
           }
-
-
           if (elementNowSelected.includes("audio")) {
             const mediaDirectory =
               process.env.BACKEND_URL === "http://localhost:8090"
@@ -458,9 +400,6 @@ export const ActionsWebhookService = async (
             const ticketInt = await Ticket.findOne({
               where: { id: ticket.id }
             });
-
-            await typeSimulation(ticket, 'recording');
-
             await SendWhatsAppMediaFlow({
               media: mediaDirectory,
               ticket: ticketInt,
@@ -485,9 +424,6 @@ export const ActionsWebhookService = async (
             const ticketInt = await Ticket.findOne({
               where: { id: ticket.id }
             });
-
-            await typeSimulation(ticket, 'recording');
-
             await SendWhatsAppMediaFlow({
               media: mediaDirectory,
               ticket: ticketInt
@@ -604,8 +540,6 @@ export const ActionsWebhookService = async (
           //   body: msg.body
           // });
 
-          await typeSimulation(ticket, 'composing')
-
           await SendWhatsAppMessage({
             body: msg.body,
             ticket: ticketDetails,
@@ -631,6 +565,7 @@ export const ActionsWebhookService = async (
 
           if (ticket) {
             await ticket.update({
+              status: "pending",
               queueId: ticket.queueId ? ticket.queueId : null,
               userId: null,
               companyId: companyId,
@@ -649,8 +584,7 @@ export const ActionsWebhookService = async (
       let isContinue = false;
 
       if (pressKey === "999" && execCount > 0) {
-        console.log(587, "ActionsWebhookService | 587")
-
+        console.log("UPDATE8...");
         pressKey = undefined;
         let result = connects.filter(connect => connect.source === execFn)[0];
         if (typeof result === "undefined") {
@@ -681,7 +615,6 @@ export const ActionsWebhookService = async (
             next = result.target;
           }
         }
-        console.log(619, "ActionsWebhookService")
       }
 
       if (!pressKey && !isContinue) {
@@ -689,25 +622,31 @@ export const ActionsWebhookService = async (
           connect => connect.source === nodeSelected.id
         ).length;
 
-        console.log(626, "ActionsWebhookService")
-
-
         if (nextNode === 0) {
+          if (ticket) {
+            ticket = await Ticket.findOne({
+              where: { id: ticket.id, whatsappId, companyId: companyId }
+            });
+            await ticket.update({
+              lastFlowId: null,
+              dataWebhook: null,
+              hashFlowId: null,
+              flowWebhook: false,
+              flowStopped: idFlowDb.toString()
+            });
 
-          console.log(654, "ActionsWebhookService")
-
-          await Ticket.findOne({
-            where: { id: idTicket, whatsappId, companyId: companyId }
-          });
-          await ticket.update({
-            lastFlowId: null,
-            dataWebhook: {
-              status: "process",
-            },
-            hashFlowId: null,
-            flowWebhook: false,
-            flowStopped: idFlowDb.toString()
-          });
+          } else {
+            ticket = await Ticket.findOne({
+              where: { id: idTicket, whatsappId, companyId: companyId }
+            });
+            await ticket.update({
+              lastFlowId: null,
+              dataWebhook: null,
+              hashFlowId: null,
+              flowWebhook: false,
+              flowStopped: idFlowDb.toString()
+            });
+          }
           break;
         }
       }
@@ -718,23 +657,12 @@ export const ActionsWebhookService = async (
         break;
       }
 
-      console.log(678, "ActionsWebhookService")
-
-      console.log("UPDATE10...");
-      ticket = await Ticket.findOne({
-        where: { id: idTicket, whatsappId, companyId: companyId }
-      });
-
-
-      if (ticket.status === "closed") {
-        io.of(String(companyId))
-          // .to(oldStatus)
-          // .to(ticketId.toString())
-          .emit(`company-${ticket.companyId}-ticket`, {
-            action: "delete",
-            ticketId: ticket.id
-          });
-
+      console.log("UPDATE9...");
+      if (idTicket) {
+        console.log("UPDATE10...");
+        ticket = await Ticket.findOne({
+          where: { id: idTicket, whatsappId, companyId: companyId }
+        });
       }
 
       console.log("UPDATE12...");

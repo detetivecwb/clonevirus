@@ -2,24 +2,21 @@ import AppError from "../errors/AppError";
 import Whatsapp from "../models/Whatsapp";
 import GetDefaultWhatsAppByUser from "./GetDefaultWhatsAppByUser";
 
-const GetDefaultWhatsApp = async (
-  whatsappId?: number,
-  companyId: number | null = null,
-  userId?: number
-): Promise<Whatsapp> => {
+const GetDefaultWhatsApp = async (whatsappId?: number, companyId: number | null = null, userId?: number): Promise<Whatsapp> => {
+
   let connection: Whatsapp;
   let defaultWhatsapp = null;
 
-  if(whatsappId){
+  if (whatsappId) {
     defaultWhatsapp = await Whatsapp.findOne({
       where: { id: whatsappId, companyId }
     });
-  }else {
+  } else {
     await Whatsapp.findOne({
       where: { status: "CONNECTED", companyId }
     });
   }
-   
+
 
   if (defaultWhatsapp?.status === 'CONNECTED') {
     connection = defaultWhatsapp;

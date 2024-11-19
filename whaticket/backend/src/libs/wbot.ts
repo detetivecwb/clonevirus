@@ -6,6 +6,7 @@ import makeWASocket, {
   WAMessage,
   WAMessageKey,
   WASocket,
+  fetchLatestBaileysVersion,
   fetchLatestWaWebVersion,
   isJidBroadcast,
   isJidGroup,
@@ -158,8 +159,10 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
         const { id, name, allowGroup, companyId } = whatsappUpdate;
 
         // const { version, isLatest } = await fetchLatestWaWebVersion({});
-        const versionB = [2, 3000, 1015901307];
+        const { version, isLatest } = await fetchLatestBaileysVersion();
+        const versionB = [2, 2410, 1];
         // logger.info(`using WA v${version.join(".")}, isLatest: ${isLatest}`);
+        logger.info(`using WA v${version.join(".")}, isLatest: ${isLatest}`);
         logger.info(`Starting session ${name}`);
         let retriesQrCode = 0;
 
@@ -170,7 +173,8 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
         const { state, saveCreds } = await useMultiFileAuthState(whatsapp);
 
         wsocket = makeWASocket({
-          version: [2, 3000, 1015901307],
+          // version: [2, 2413, 1],
+          version: version,
           logger: loggerBaileys,
           printQRInTerminal: false,
           // auth: state as AuthenticationState,
@@ -217,8 +221,8 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
   Whatsapp nome: ${wpp.name}
   Whatsapp Id: ${wpp.id}
   Criação do arquivo de logs: ${moment().format("DD/MM/YYYY HH:mm:ss")}
-  Selecionado Data de inicio de importação: ${moment(dateOldLimit).format("DD/MM/YYYY HH:mm:ss")} 
-  Selecionado Data final da importação: ${moment(dateRecentLimit).format("DD/MM/YYYY HH:mm:ss")} 
+  Selecionado Data de inicio de importação: ${moment(dateOldLimit).format("DD/MM/YYYY HH:mm:ss")}
+  Selecionado Data final da importação: ${moment(dateRecentLimit).format("DD/MM/YYYY HH:mm:ss")}
   `})
 
             const statusImportMessages = new Date().getTime();
@@ -247,7 +251,7 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
   Data e hora da mensagem: ${moment(timestampMsg).format("DD/MM/YYYY HH:mm:ss")}
   Contato da Mensagem : ${msg.key?.remoteJid}
   Tipo da mensagem : ${getTypeMessage(msg)}
-  
+
   `})
                     filteredDateMessages.push(msg)
                   } else {
@@ -258,7 +262,7 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
   Data e hora da mensagem: ${moment(timestampMsg).format("DD/MM/YYYY HH:mm:ss")}
   Contato da Mensagem : ${msg.key?.remoteJid}
   Tipo da mensagem : ${getTypeMessage(msg)}
-  
+
   `})
                       filteredDateMessages.push(msg)
                     }
@@ -337,6 +341,13 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
           }
 
         }, 2500);
+
+
+        wsocket.ev.on("presence.update", async ({ id: remoteJid, presences }) => {
+
+          console.log('evento de presença', remoteJid, presences)
+
+        })
 
 
 
@@ -465,6 +476,7 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
             }
           }
         );
+
         wsocket.ev.on("creds.update", saveCreds);
         // wsocket.store = store;
         // store.bind(wsocket.ev);

@@ -173,11 +173,11 @@ const App = () => {
       });
     getPublicSetting("appName")
       .then((name) => {
-        setAppName(name || "Agilizachat");
+        setAppName(name || "WORKZAP");
       })
       .catch((error) => {
         console.log("!==== Erro ao carregar temas: ====!", error);
-        setAppName("Agilizachat");
+        setAppName("WORKZAP");
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
